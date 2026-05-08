@@ -1,0 +1,59 @@
+:root {
+  color-scheme: dark;
+  --bg: #0e1014;
+  --panel: #161a22;
+  --line: #232a36;
+  --text: #e6edf3;
+  --muted: #8b96a8;
+  --go: #2ea043;
+  --stop: #d24545;
+  --accent: #4f8cff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 24px; border-bottom: 1px solid var(--line);
+}
+header h1 { margin: 0; font-size: 18px; letter-spacing: 0.5px; }
+.badge { font-size: 12px; padding: 2px 10px; border-radius: 999px; text-transform: uppercase; }
+.badge.stopped { background: #3a2222; color: #ffb3b3; }
+.badge.running { background: #1f3a25; color: #a8efb8; }
+.badge.starting, .badge.stopping { background: #3a3322; color: #ffe6a8; }
+.badge.error { background: #3a2222; color: #ffb3b3; }
+main {
+  display: grid; gap: 16px; padding: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  max-width: 1200px; margin: 0 auto;
+}
+.panel {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 10px; padding: 16px;
+}
+.panel h2 { margin: 0 0 12px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+.controls { display: flex; gap: 12px; }
+.btn {
+  appearance: none; border: 1px solid var(--line); background: #1d232e; color: var(--text);
+  padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;
+}
+.btn:hover { border-color: var(--accent); }
+.btn-go { background: var(--go); border-color: var(--go); color: white; }
+.btn-stop { background: var(--stop); border-color: var(--stop); color: white; }
+.error { color: #ff8a8a; margin-top: 10px; }
+form { display: grid; gap: 10px; }
+label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+input, select {
+  background: #0f141c; color: var(--text); border: 1px solid var(--line);
+  padding: 8px 10px; border-radius: 6px; font: inherit;
+}
+dl { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin: 0; }
+dt { color: var(--muted); }
+dd { margin: 0; font-variant-numeric: tabular-nums; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 500; }
