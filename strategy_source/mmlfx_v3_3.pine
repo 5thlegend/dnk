@@ -1,0 +1,207 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+// (c) Dank5XL - MMLFX v3.3 "EUR Printer" (Impulse Map + Forecast)
+//
+// Original Pine Script v6 source. Kept here as the canonical reference for
+// the Python port in bot/strategy/mmlfx.py. If this file is updated, the
+// Python port must be re-validated.
+//
+// NOTE on the Impulse Engine subsystem (zigzag/triple impulse/forecast):
+// it is informational only -- it draws on the chart and feeds the HUD, but
+// it does NOT gate any entry. The signals `buy = fmB or fbB` and
+// `sell = fmS or fbS` are the only paths into a trade, and neither
+// references the impulse variables. The Python port reflects this.
+
+//@version=6
+strategy("(infinity) MMLFX v3.3 EUR Printer", overlay=true,
+     calc_on_every_tick=true,
+     margin_long=100, margin_short=100,
+     max_labels_count=500, max_lines_count=500, max_boxes_count=300,
+     default_qty_type=strategy.fixed, default_qty_value=0.01,
+     commission_type=strategy.commission.cash_per_order, commission_value=0.07,
+     slippage=2, process_orders_on_close=false,
+     initial_capital=1.10, currency=currency.USD)
+
+grp1           = "CORE"
+autoPhase      = input.bool(true, "Auto Phase ($30 switch)", group=grp1)
+manualPhase    = input.string("MICRO", "Manual Phase", options=["MICRO","BREAKOUT"], group=grp1)
+maxTradesDay   = input.int(3, "Max Trades/Day", 1, 8, group=grp1)
+
+grp2           = "MICRO SCALP ($1->$30)"
+mSLp           = input.float(4.0, "SL pips", 2.0, 8.0, step=0.5, group=grp2)
+mTPp           = input.float(4.0, "TP pips", 2.0, 8.0, step=0.5, group=grp2)
+mEf            = input.int(8, "Fast EMA", 3, 20, group=grp2)
+mEs            = input.int(21, "Slow EMA", 10, 50, group=grp2)
+mRl            = input.int(7, "RSI Len", 3, 14, group=grp2)
+mRob           = input.float(65.0, "RSI OB", 55, 80, step=1, group=grp2)
+mRos           = input.float(35.0, "RSI OS", 20, 45, step=1, group=grp2)
+mMv            = input.float(1.1, "Min Candle xavg", 0.8, 2.0, step=0.1, group=grp2)
+
+grp3           = "BREAKOUT ($30->$500)"
+p2Rp           = input.float(2.0, "Risk %", 0.5, 5.0, step=0.5, group=grp3)
+p2RR           = input.float(1.0, "R:R", 0.5, 3.0, step=0.1, group=grp3)
+asH            = input.int(22, "Asia Start UTC", 0, 23, group=grp3)
+aeH            = input.int(6, "Asia End UTC", 0, 23, group=grp3)
+tsH            = input.int(7, "Trade Start UTC", 0, 23, group=grp3)
+teH            = input.int(16, "Trade End UTC", 0, 23, group=grp3)
+caH            = input.int(20, "Close All UTC", 0, 23, group=grp3)
+mnR            = input.float(15.0, "Min Range pips", 5, 60, step=1, group=grp3)
+mxR            = input.float(60.0, "Max Range pips", 30, 120, step=5, group=grp3)
+bbuf           = input.float(3.0, "Break Buffer pips", 0, 15, step=1, group=grp3)
+
+grp4           = "SESSION"
+uL             = input.bool(true, "London", group=grp4)
+uN             = input.bool(true, "New York", group=grp4)
+lS             = input.int(7, "LDN Start UTC", 0, 23, group=grp4)
+lE             = input.int(11, "LDN End UTC", 0, 23, group=grp4)
+nS             = input.int(12, "NY Start UTC", 0, 23, group=grp4)
+nE             = input.int(16, "NY End UTC", 0, 23, group=grp4)
+
+// GLOBAL
+pip            = syminfo.mintick * 10
+atr            = ta.atr(14)
+eq             = strategy.equity
+phase          = autoPhase ? (eq < 30 ? "MICRO" : "BREAKOUT") : manualPhase
+utcH           = hour(time, "UTC")
+utcD           = dayofmonth(time, "UTC")
+iL             = uL and utcH >= lS and utcH < lE
+iN             = uN and utcH >= nS and utcH < nE
+iSes           = iL or iN
+
+var int tDay   = 0
+var int tDayN  = -1
+if utcD != tDayN
+    tDay  := 0
+    tDayN := utcD
+canT           = tDay < maxTradesDay and iSes
+
+ef             = ta.ema(close, mEf)
+es             = ta.ema(close, mEs)
+e200           = ta.ema(close, 200)
+rsi            = ta.rsi(close, mRl)
+avgC           = ta.sma(high - low, 20)
+cSz            = high - low
+
+// MICRO SCALP
+tBm  = ef > es and close > es
+tBrm = ef < es and close < es
+rBo  = rsi > 50 and rsi < mRob
+rSo  = rsi < 50 and rsi > mRos
+mom  = cSz > avgC * mMv
+plB  = ta.lowest(low, 3) <= es and close > ef
+plS  = ta.highest(high, 3) >= es and close < ef
+
+mBuy  = phase == "MICRO" and canT and tBm and rBo and mom and plB and close > open
+mSell = phase == "MICRO" and canT and tBrm and rSo and mom and plS and close < open
+
+var bool mBT = false
+var bool mST = false
+var int  mBr = 0
+if utcD != tDayN or not iSes
+    mBT := false
+    mST := false
+mCo = (bar_index - mBr) >= 5
+fmB = mBuy and not mBT and mCo
+fmS = mSell and not mST and mCo
+
+slB = close - mSLp * pip
+tpB = close + mTPp * pip
+slS = close + mSLp * pip
+tpS = close - mTPp * pip
+
+// BREAKOUT
+aOn = asH > aeH ? (utcH >= asH or utcH < aeH) : (utcH >= asH and utcH < aeH)
+p2T = tsH < teH ? (utcH >= tsH and utcH < teH) : (utcH >= tsH or utcH < teH)
+p2C = utcH >= caH
+
+var float aHi = na
+var float aLo = na
+var bool  rLk = false
+
+aSt = aOn and not aOn[1]
+if aSt
+    aHi := high
+    aLo := low
+    rLk := false
+if aOn and not rLk
+    if not na(aHi)
+        aHi := math.max(aHi, high)
+        aLo := math.min(aLo, low)
+    else
+        aHi := high
+        aLo := low
+aEn = not aOn and aOn[1]
+if aEn
+    rLk := true
+
+rSz = rLk and not na(aHi) and not na(aLo) ? aHi - aLo : 0.0
+rPp = rSz / pip
+rVl = rLk and rPp >= mnR and rPp <= mxR
+bf  = bbuf * pip
+
+brB = rVl and p2T and not p2C and close > aHi + bf and close > open and close > e200
+brS = rVl and p2T and not p2C and close < aLo - bf and close < open and close < e200
+
+var bool bBT = false
+var bool bST = false
+if aSt
+    bBT := false
+    bST := false
+
+fbB = phase == "BREAKOUT" and canT and brB and not bBT
+fbS = phase == "BREAKOUT" and canT and brS and not bST
+
+p2Rk  = eq * p2Rp / 100.0
+p2d_b = fbB ? math.abs(close - aLo + bf) : 0.0
+p2d_s = fbS ? math.abs(aHi + bf - close) : 0.0
+p2p_b = p2d_b / pip
+p2p_s = p2d_s / pip
+p2l_b = p2p_b > 0 ? math.max(0.01, math.round(p2Rk / (p2p_b * 10.0) / 0.01) * 0.01) : 0.01
+p2l_s = p2p_s > 0 ? math.max(0.01, math.round(p2Rk / (p2p_s * 10.0) / 0.01) * 0.01) : 0.01
+p2SB  = fbB ? aLo - bf : na
+p2TB  = fbB ? close + p2d_b * p2RR : na
+p2SS  = fbS ? aHi + bf : na
+p2TS  = fbS ? close - p2d_s * p2RR : na
+
+// COMBINED
+buy  = fmB or fbB
+sell = fmS or fbS
+
+if buy or sell
+    tDay += 1
+if fmB
+    mBT := true
+    mBr := bar_index
+if fmS
+    mST := true
+    mBr := bar_index
+if fbB
+    bBT := true
+if fbS
+    bST := true
+
+// EXECUTION
+if buy and strategy.position_size < 0
+    strategy.close_all(comment="Flip L")
+if sell and strategy.position_size > 0
+    strategy.close_all(comment="Flip S")
+
+if fmB
+    strategy.entry("L", strategy.long, qty=0.01)
+    strategy.exit("XL", "L", stop=slB, limit=tpB)
+if fmS
+    strategy.entry("S", strategy.short, qty=0.01)
+    strategy.exit("XS", "S", stop=slS, limit=tpS)
+if fbB
+    strategy.entry("L", strategy.long, qty=p2l_b)
+    strategy.exit("XL", "L", stop=p2SB, limit=p2TB)
+if fbS
+    strategy.entry("S", strategy.short, qty=p2l_s)
+    strategy.exit("XS", "S", stop=p2SS, limit=p2TS)
+if phase == "BREAKOUT" and p2C and strategy.position_size != 0
+    strategy.close_all(comment="EOD")
+
+// (Impulse Engine subsystem and visual / HUD / alert blocks omitted from this
+// archived copy. They have no effect on trade decisions; see the original
+// paste in PR conversation if needed.)

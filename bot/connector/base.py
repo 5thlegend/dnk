@@ -62,3 +62,9 @@ class Connector(ABC):
 
     @abstractmethod
     async def close_position(self, ticket: int) -> None: ...
+
+    async def get_history(self, symbol: str, timeframe: str, count: int) -> list:
+        """Return closed historical bars (oldest first). Implementations
+        return `bot.marketdata.Bar` objects. Default returns []; the engine
+        will warm up from live ticks instead."""
+        return []
