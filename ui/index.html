@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>dnk - MT5 bot</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>dnk</h1>
+    <span id="badge" class="badge stopped">stopped</span>
+    <span id="strategyTag" class="tag">strategy: -</span>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>Control</h2>
+      <div class="controls">
+        <button id="startBtn" class="btn btn-go">Start</button>
+        <button id="stopBtn" class="btn btn-stop">Stop</button>
+      </div>
+      <p id="error" class="error" hidden></p>
+    </section>
+
+    <section class="panel">
+      <h2>Core</h2>
+      <form id="coreForm">
+        <label>Mode
+          <select name="mode">
+            <option value="mock">mock (local sim)</option>
+            <option value="demo">demo (Plexytrade demo) - Phase 4</option>
+            <option value="live">live (Plexytrade live) - Phase 6</option>
+          </select>
+        </label>
+        <label>Strategy
+          <select name="strategy">
+            <option value="mmlfx">mmlfx (EUR Printer v3.3)</option>
+            <option value="noop">noop (no trades)</option>
+          </select>
+        </label>
+        <label>Symbol <input name="symbol" value="EURUSD" /></label>
+        <label>Timeframe
+          <select name="timeframe">
+            <option>M1</option><option>M5</option><option>M15</option>
+            <option>M30</option><option>H1</option><option>H4</option><option>D1</option>
+          </select>
+        </label>
+        <label>Starting balance ($) <input name="starting_balance" type="number" step="0.01" min="1" value="5" /></label>
+        <label>Risk per trade % (fallback) <input name="risk_per_trade_pct" type="number" step="0.1" min="0" max="100" value="1" /></label>
+        <label>Max daily loss % <input name="max_daily_loss_pct" type="number" step="0.5" min="0" max="100" value="10" /></label>
+        <label>Max open positions <input name="max_open_positions" type="number" min="1" max="20" value="1" /></label>
+        <label>Poll interval (s) <input name="poll_interval_seconds" type="number" step="0.1" min="0.1" value="1" /></label>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>MMLFX strategy</h2>
+      <form id="mmlfxForm">
+        <fieldset>
+          <legend>Phase</legend>
+          <label><input type="checkbox" name="mmlfx.auto_phase" checked /> Auto switch at $30</label>
+          <label>Manual phase
+            <select name="mmlfx.manual_phase">
+              <option>MICRO</option><option>BREAKOUT</option>
+            </select>
+          </label>
+          <label>Max trades / day <input name="mmlfx.max_trades_day" type="number" min="1" max="8" value="3" /></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>MICRO scalp</legend>
+          <label>SL pips <input name="mmlfx.micro_sl_pips" type="number" step="0.5" min="2" max="8" value="4" /></label>
+          <label>TP pips <input name="mmlfx.micro_tp_pips" type="number" step="0.5" min="2" max="8" value="4" /></label>
+          <label>EMA fast <input name="mmlfx.micro_ema_fast" type="number" min="3" max="20" value="8" /></label>
+          <label>EMA slow <input name="mmlfx.micro_ema_slow" type="number" min="10" max="50" value="21" /></label>
+          <label>RSI length <input name="mmlfx.micro_rsi_length" type="number" min="3" max="14" value="7" /></label>
+          <label>RSI OB <input name="mmlfx.micro_rsi_ob" type="number" step="1" min="55" max="80" value="65" /></label>
+          <label>RSI OS <input name="mmlfx.micro_rsi_os" type="number" step="1" min="20" max="45" value="35" /></label>
+          <label>Min candle x avg <input name="mmlfx.micro_min_candle_x_avg" type="number" step="0.1" min="0.8" max="2" value="1.1" /></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>BREAKOUT</legend>
+          <label>Risk % <input name="mmlfx.breakout_risk_pct" type="number" step="0.5" min="0.5" max="5" value="2" /></label>
+          <label>R:R <input name="mmlfx.breakout_rr" type="number" step="0.1" min="0.5" max="3" value="1" /></label>
+          <label>Asia start (UTC) <input name="mmlfx.asia_start" type="number" min="0" max="23" value="22" /></label>
+          <label>Asia end (UTC) <input name="mmlfx.asia_end" type="number" min="0" max="23" value="6" /></label>
+          <label>Trade start (UTC) <input name="mmlfx.trade_start" type="number" min="0" max="23" value="7" /></label>
+          <label>Trade end (UTC) <input name="mmlfx.trade_end" type="number" min="0" max="23" value="16" /></label>
+          <label>Close-all hour (UTC) <input name="mmlfx.close_all_hour" type="number" min="0" max="23" value="20" /></label>
+          <label>Min range pips <input name="mmlfx.min_range_pips" type="number" step="1" min="5" value="15" /></label>
+          <label>Max range pips <input name="mmlfx.max_range_pips" type="number" step="5" min="30" value="60" /></label>
+          <label>Break buffer pips <input name="mmlfx.break_buffer_pips" type="number" step="1" min="0" value="3" /></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Impulse filter</legend>
+          <label><input type="checkbox" name="mmlfx.use_impulse_filter" checked /> Require fresh triple-impulse</label>
+          <label>ZigZag threshold (%) <input name="mmlfx.zz_pct_threshold" type="number" step="0.005" min="0.005" max="1" value="0.03" /></label>
+          <label>Max age (bars) <input name="mmlfx.impulse_max_age_bars" type="number" min="1" max="200" value="10" /></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Sessions</legend>
+          <label><input type="checkbox" name="mmlfx.use_london" checked /> London</label>
+          <label>LDN start (UTC) <input name="mmlfx.london_start" type="number" min="0" max="23" value="7" /></label>
+          <label>LDN end (UTC) <input name="mmlfx.london_end" type="number" min="0" max="23" value="11" /></label>
+          <label><input type="checkbox" name="mmlfx.use_ny" checked /> New York</label>
+          <label>NY start (UTC) <input name="mmlfx.ny_start" type="number" min="0" max="23" value="12" /></label>
+          <label>NY end (UTC) <input name="mmlfx.ny_end" type="number" min="0" max="23" value="16" /></label>
+        </fieldset>
+
+        <button id="saveBtn" type="submit" class="btn">Save settings</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Live state</h2>
+      <dl id="state">
+        <dt>Status</dt><dd data-k="status">-</dd>
+        <dt>Balance</dt><dd data-k="balance">-</dd>
+        <dt>Open positions</dt><dd data-k="open_positions">-</dd>
+        <dt>Last bid / ask</dt><dd data-k="quote">-</dd>
+        <dt>Tick count</dt><dd data-k="tick_count">-</dd>
+      </dl>
+    </section>
+
+    <section class="panel wide">
+      <h2>Recent trades</h2>
+      <table id="trades">
+        <thead><tr><th>Time</th><th>Side</th><th>Vol</th><th>Entry</th><th>Reason</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
