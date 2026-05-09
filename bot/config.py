@@ -49,6 +49,10 @@ class MMLFXSettings(BaseModel):
     ny_start: int = Field(12, ge=0, le=23)
     ny_end: int = Field(16, ge=0, le=23)
 
+    use_impulse_filter: bool = True
+    zz_pct_threshold: float = Field(0.03, gt=0.0, le=1.0)
+    impulse_max_age_bars: int = Field(10, ge=1, le=200)
+
 
 class Settings(BaseModel):
     mode: Mode = Mode.MOCK

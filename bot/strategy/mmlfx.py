@@ -6,6 +6,7 @@ from ..config import MMLFXSettings, Settings
 from ..indicators import ema, rsi, sma
 from ..marketdata import Bar
 from .base import Signal, SignalType, Strategy
+from .impulse import ImpulseEngine
 
 
 def pip_size(symbol: str) -> float:
@@ -55,6 +56,7 @@ class MMLFXStrategy(Strategy):
         self.symbol = settings.symbol
         self.pip = pip_size(self.symbol)
         self.state = _MMLFXState(equity=settings.starting_balance)
+        self.impulse = ImpulseEngine(zz_pct=self.mmlfx.zz_pct_threshold)
 
     def update_equity(self, equity: float) -> None:
         self.state.equity = equity
@@ -68,6 +70,14 @@ class MMLFXStrategy(Strategy):
 
         m = self.mmlfx
         last = bars[-1]
+
+        self.impulse.process_history(bars)
+        bar_idx_now = len(bars) - 1
+        if m.use_impulse_filter:
+            bull_filter_ok = self.impulse.is_bull_fresh(bar_idx_now, m.impulse_max_age_bars)
+            bear_filter_ok = self.impulse.is_bear_fresh(bar_idx_now, m.impulse_max_age_bars)
+        else:
+            bull_filter_ok = bear_filter_ok = True
 
         closes = [b.close for b in bars]
         highs = [b.high for b in bars]
@@ -130,8 +140,8 @@ class MMLFXStrategy(Strategy):
         )
         cooldown_ok = (bar_index - self.state.micro_last_bar_index) >= 5
 
-        fmB = micro_buy and not self.state.micro_buy_taken and cooldown_ok
-        fmS = micro_sell and not self.state.micro_sell_taken and cooldown_ok
+        fmB = micro_buy and not self.state.micro_buy_taken and cooldown_ok and bull_filter_ok
+        fmS = micro_sell and not self.state.micro_sell_taken and cooldown_ok and bear_filter_ok
 
         # Asia session range
         as_h, ae_h = m.asia_start, m.asia_end
@@ -199,11 +209,11 @@ class MMLFXStrategy(Strategy):
 
         fbB = (
             phase == "BREAKOUT" and can_trade and breakout_long
-            and not self.state.breakout_buy_taken
+            and not self.state.breakout_buy_taken and bull_filter_ok
         )
         fbS = (
             phase == "BREAKOUT" and can_trade and breakout_short
-            and not self.state.breakout_sell_taken
+            and not self.state.breakout_sell_taken and bear_filter_ok
         )
 
         # End-of-day flatten in BREAKOUT phase

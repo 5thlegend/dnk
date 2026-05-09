@@ -95,6 +95,13 @@
         </fieldset>
 
         <fieldset>
+          <legend>Impulse filter</legend>
+          <label><input type="checkbox" name="mmlfx.use_impulse_filter" checked /> Require fresh triple-impulse</label>
+          <label>ZigZag threshold (%) <input name="mmlfx.zz_pct_threshold" type="number" step="0.005" min="0.005" max="1" value="0.03" /></label>
+          <label>Max age (bars) <input name="mmlfx.impulse_max_age_bars" type="number" min="1" max="200" value="10" /></label>
+        </fieldset>
+
+        <fieldset>
           <legend>Sessions</legend>
           <label><input type="checkbox" name="mmlfx.use_london" checked /> London</label>
           <label>LDN start (UTC) <input name="mmlfx.london_start" type="number" min="0" max="23" value="7" /></label>

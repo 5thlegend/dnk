@@ -16,12 +16,14 @@ const NUMERIC_KEYS = new Set([
   "micro_rsi_ob", "micro_rsi_os",
   "breakout_risk_pct", "breakout_rr",
   "min_range_pips", "max_range_pips", "break_buffer_pips",
+  "zz_pct_threshold",
 ]);
 const INT_KEYS = new Set([
   "max_open_positions",
   "max_trades_day", "micro_ema_fast", "micro_ema_slow", "micro_rsi_length",
   "asia_start", "asia_end", "trade_start", "trade_end", "close_all_hour",
   "london_start", "london_end", "ny_start", "ny_end",
+  "impulse_max_age_bars",
 ]);
 
 async function api(path, options = {}) {
