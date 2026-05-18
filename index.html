@@ -129,7 +129,7 @@
     </div>
     <div class="flex items-center gap-3">
       <span id="ts" class="hidden sm:inline">--:--:-- UTC</span>
-      <span class="text-accent">ONLINE</span>
+      <span id="mode-pill" class="text-accent">ONLINE</span>
     </div>
   </div>
 </div>
@@ -353,6 +353,10 @@
 
         <div class="mono text-[10px] tracking-[0.3em] text-accent">PLAY-001 // CIELITO-LINDO // TULARE.CA</div>
 
+        <div id="demo-banner" class="hidden mt-4 border border-[#ff6a00]/50 bg-[#ff6a00]/[0.06] px-3 py-2 mono text-[11px] tracking-[0.15em] text-[#ff6a00]">
+          ▍ TEST MODE — Stripe not configured. CTA runs a demo flow, no charge will occur.
+        </div>
+
         <div class="mt-4 flex items-end gap-2">
           <div class="mono text-6xl sm:text-7xl text-fg leading-none">$497</div>
           <div class="mono text-dim mb-2">/ close</div>
@@ -454,20 +458,49 @@
     tick(); setInterval(tick,1000);
   })();
 
-  // Stripe Checkout wiring
-  // Replace these with your live values:
+  // Stripe Checkout wiring — replace these with your live values:
   const STRIPE_PUBLISHABLE_KEY = "pk_live_REPLACE_ME";
   const STRIPE_PRICE_ID        = "price_REPLACE_ME";          // $497 one-time price
   const STRIPE_PAYMENT_LINK    = "https://buy.stripe.com/REPLACE_ME"; // fallback Payment Link
+
+  // TEST MODE: any value still containing REPLACE_ME means Stripe isn't wired
+  // yet. In that case we intercept the CTA and route to the thank-you page as
+  // a demo, instead of breaking on a dead Payment Link.
+  const TEST_MODE =
+    STRIPE_PUBLISHABLE_KEY.includes('REPLACE_ME') ||
+    STRIPE_PRICE_ID.includes('REPLACE_ME') ||
+    STRIPE_PAYMENT_LINK.includes('REPLACE_ME');
 
   const btn   = document.getElementById('checkout-btn');
   const label = document.getElementById('checkout-label');
   const err   = document.getElementById('checkout-err');
 
+  // Surface test-mode in the top status bar + price-card banner.
+  if (TEST_MODE) {
+    const pill = document.getElementById('mode-pill');
+    if (pill) {
+      pill.textContent = 'TEST MODE';
+      pill.style.color = '#ff6a00';
+      pill.title = 'Stripe is not yet configured — CTA runs a demo flow.';
+    }
+    const banner = document.getElementById('demo-banner');
+    if (banner) banner.classList.remove('hidden');
+    if (label) label.textContent = 'Run demo checkout (test mode)';
+  }
+
   btn.addEventListener('click', async () => {
     err.classList.add('hidden'); err.textContent = '';
-    label.textContent = 'Opening secure checkout…';
     btn.disabled = true;
+
+    if (TEST_MODE) {
+      label.textContent = 'Simulating payment…';
+      setTimeout(() => {
+        window.location.href = 'thank-you.html?session_id=cs_test_DEMO' + Date.now().toString(36).toUpperCase();
+      }, 700);
+      return;
+    }
+
+    label.textContent = 'Opening secure checkout…';
 
     try {
       // Preferred path: server-created Checkout Session
@@ -489,8 +522,10 @@
       // Fallback: direct Stripe Payment Link
       window.location.href = STRIPE_PAYMENT_LINK;
     } finally {
-      // reset if user comes back
-      setTimeout(() => { label.textContent = 'Pay $497 → Deploy Build'; btn.disabled = false; }, 4000);
+      setTimeout(() => {
+        label.textContent = TEST_MODE ? 'Run demo checkout (test mode)' : 'Pay $497 → Deploy Build';
+        btn.disabled = false;
+      }, 4000);
     }
   });
 </script>

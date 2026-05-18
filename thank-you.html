@@ -170,13 +170,25 @@
 </footer>
 
 <script>
-  // Pull session_id from URL ?session_id=cs_test_... and render last 6 chars as order ref
+  // Pull session_id from URL ?session_id=cs_test_... and render last 6 chars as order ref.
+  // If the session id starts with cs_test_DEMO, surface a TEST MODE banner.
   (function(){
     const p = new URLSearchParams(location.search);
     const sid = p.get('session_id') || p.get('cs') || '';
     if (sid) {
       const tail = sid.slice(-6).toUpperCase();
       document.getElementById('order-ref').textContent = 'DNK-001-' + tail;
+    }
+    if (sid.indexOf('cs_test_DEMO') === 0) {
+      const host = document.querySelector('main .max-w-4xl');
+      if (host) {
+        const banner = document.createElement('div');
+        banner.className = 'mb-6 border border-[#ff6a00]/50 bg-[#ff6a00]/[0.06] px-4 py-3';
+        banner.innerHTML =
+          '<div class="mono text-[11px] tracking-[0.2em] text-[#ff6a00]">' +
+          '▍ TEST MODE — this is a demo of the post-payment flow. No charge was made.</div>';
+        host.insertBefore(banner, host.firstChild);
+      }
     }
   })();
 </script>

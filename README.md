@@ -15,7 +15,7 @@ guarantee     50% back if late, customer keeps the build
 
 | File | Purpose |
 |---|---|
-| `pricing.html` | Single-file pricing page. Tailwind via CDN, JetBrains Mono + Inter, HUD brackets, scanline veil, operator-console feel. Pain → Promise → Proof → Package → Price. |
+| `index.html` | Single-file pricing page. Tailwind via CDN, JetBrains Mono + Inter, HUD brackets, scanline veil, operator-console feel. Pain → Promise → Proof → Package → Price. |
 | `thank-you.html` | Post-payment landing page with terminal-style status, next-3-steps, 48h timeline, guarantee. |
 | `stripe/config.md` | Stripe Product/Price/Payment Link/Webhook setup + env vars + test cards. |
 | `stripe/create-checkout-session.js` | Node handler for `POST /api/create-checkout-session` with custom fields, metadata, and 24h expiry. |
@@ -26,7 +26,7 @@ guarantee     50% back if late, customer keeps the build
 
 1. Create the product + $497 one-time price in Stripe Dashboard (`stripe/config.md`).
 2. Set env vars: `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_PAYMENT_LINK`, `STRIPE_WEBHOOK_SECRET`.
-3. Replace the three `REPLACE_ME` constants in `pricing.html` (publishable key, price id, payment-link URL).
+3. Replace the three `REPLACE_ME` constants in `index.html` (publishable key, price id, payment-link URL).
 4. Deploy `stripe/create-checkout-session.js` to `/api/create-checkout-session`.
 5. Add a webhook → `/api/stripe-webhook` for `checkout.session.completed`, `payment_intent.payment_failed`, `charge.refunded`.
 
@@ -40,4 +40,20 @@ Recovery: `{{customer_first_name}}`, `{{restaurant_name}}`, `{{order_ref}}`, `{{
 
 ## Local preview
 
-Open `pricing.html` directly in a browser — it's fully self-contained (Tailwind CDN + Stripe.js CDN). For Stripe Checkout to actually fire you need the env vars wired and the API route deployed.
+Open `index.html` directly in a browser — it's fully self-contained (Tailwind CDN + Stripe.js CDN). For Stripe Checkout to actually fire you need the env vars wired and the API route deployed.
+
+## Test mode
+
+If the three Stripe constants in `index.html` still contain `REPLACE_ME`, the page
+runs in **TEST MODE**: the top status pill flips to orange, a banner appears on
+the price card, and the CTA simulates a payment and routes to `thank-you.html`
+with a demo session id. No network calls are made to Stripe. Replace the
+constants to switch into live mode.
+
+## Live preview (GitHub Pages)
+
+A workflow at `.github/workflows/pages.yml` deploys the static site to Pages on
+every push to the working branch. To enable: **Repo Settings → Pages → Build and
+deployment → Source: GitHub Actions.** After the first successful run the URL
+appears at the bottom of the workflow run page (typically
+`https://<owner>.github.io/<repo>/`).
