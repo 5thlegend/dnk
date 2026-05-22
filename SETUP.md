@@ -87,7 +87,48 @@ In your Discord server, type:
 Within ~30s, the bot edits its reply with an embed containing the 10-output
 pack. Open the dashboard URL — the transmission appears in the kanban.
 
-## 9. Voice swap (optional)
+## 9. Typefully auto-posting (optional, recommended)
+
+So scheduled X posts/threads ship without you copy-pasting:
+
+1. typefully.com → Settings → Integrations → API → generate key
+2. `npx wrangler pages secret put TYPEFULLY_API_KEY`
+3. Re-deploy. The "→ Typefully" button appears on X-channel outputs in the
+   dashboard. Pick a date/time, hit push, Typefully posts at that time.
+
+## 10. GitHub auto-ingest (optional, recommended)
+
+Every push with non-trivial commits auto-becomes a transmission:
+
+1. Generate any random string, e.g. `openssl rand -hex 32`
+2. `npx wrangler pages secret put GITHUB_WEBHOOK_SECRET` → paste it
+3. GitHub repo → Settings → Webhooks → Add webhook
+   - Payload URL: `https://<your-deploy>/api/ingest/github`
+   - Content type: `application/json`
+   - Secret: the same string
+   - Events: "Just the push event" (or also pull request)
+4. Push a commit. Within ~30s a transmission appears.
+
+## 11. Generic webhook (Zapier / Make / Linear / Notion / IFTTT)
+
+For anything that can POST JSON:
+
+1. Generate a random string. `npx wrangler pages secret put INGEST_WEBHOOK_KEY`
+2. POST to `https://<your-deploy>/api/ingest/webhook?key=<that-string>` with
+   `{ "note": "...", "url": "...", "source": "linear" }`
+3. The transmission appears in the dashboard.
+
+Use cases:
+- Linear issue closed → webhook with the issue title as the note
+- Notion page updated → Zapier → webhook
+- iPhone shortcut → POST to the webhook with dictation
+
+## 12. Web capture form
+
+If Discord isn't open, hit `https://<your-deploy>/capture` in any browser
+for the same `/dank` flow as a web form.
+
+## 13. Voice swap (optional)
 
 If Llama 3.3's output isn't hitting the cinematic register:
 

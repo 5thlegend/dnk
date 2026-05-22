@@ -43,15 +43,23 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-bg text-fg">
-      <header className="border-b border-line px-8 py-6 flex items-baseline justify-between">
+      <header className="border-b border-line px-8 py-6 flex items-baseline justify-between gap-4">
         <div>
           <div className="cinematic">General Dank · Content Engine</div>
           <h1 className="mt-2 text-2xl font-medium tracking-tight">
             Realtime transmission console
           </h1>
         </div>
-        <div className="mono text-xs text-muted">
-          {transmissions.length} transmissions · {allOutputs.length} outputs
+        <div className="flex items-center gap-4">
+          <div className="mono text-xs text-muted">
+            {transmissions.length} transmissions · {allOutputs.length} outputs
+          </div>
+          <Link
+            href="/capture"
+            className="mono text-xs px-3 py-2 bg-fg text-bg hover:bg-accent transition"
+          >
+            + fire transmission
+          </Link>
         </div>
       </header>
 

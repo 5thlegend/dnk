@@ -8,18 +8,24 @@ a 10-output content pack tuned for X, IG, LinkedIn, and Reels in the
 General Dank voice.
 
 ```
-capture (Discord /dank)
-    │
-    ▼
-ingest (whisper · vision · url fetch)
-    │
-    ▼
-generate (Llama 3.3 70B → swappable to Opus 4.7)
-    │
-    ▼
-store (Supabase) ─┬─ dashboard (Next.js kanban)
-                  ├─ email digest (Resend)
-                  └─ Discord reply (embed)
+capture                              ingest               generate
+─────────                            ─────────            ──────────
+Discord /dank ──┐                   whisper (audio)        Llama 3.3 70B
+web /capture ───┼──► founder blob ──► vision (image) ──► or Opus 4.7
+GitHub push ────┤                   url fetch + parse      ─────────
+generic webhook ┘                                                │
+                                                                 ▼
+                                                            10-output pack
+                                                                 │
+              ┌──────────────────┬────────────────────┬──────────┘
+              ▼                  ▼                    ▼
+      Supabase store     Discord embed reply    daily email digest
+              │
+              ▼
+      Next.js kanban dashboard
+        draft → scheduled → posted
+        Typefully push for X
+        manual performance logging
 ```
 
 ## Mission
@@ -57,6 +63,8 @@ being built in realtime."*
 | DB | Supabase Postgres |
 | Media storage | Supabase Storage |
 | Email | Resend |
+| X auto-post | Typefully (optional) |
+| Auto-ingest | GitHub webhook + generic webhook (Zapier/Linear/Notion/IFTTT) |
 
 ## Setup
 

@@ -82,7 +82,12 @@ export default async function TransmissionPage(props: {
                   <div className="cinematic">{CHANNEL_LABELS[channel]}</div>
                 </div>
                 <ChannelBody channel={channel} body={o.body} />
-                <OutputStatusControls outputId={o.id} status={o.status as OutputStatus} />
+                <OutputStatusControls
+                  outputId={o.id}
+                  status={o.status as OutputStatus}
+                  channel={channel}
+                  performance={o.performance}
+                />
               </article>
             );
           })}
