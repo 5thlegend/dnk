@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTransmission } from "@/lib/supabase";
 import { CHANNEL_LABELS, type Channel } from "@/lib/prompts";
+import { OutputStatusControls } from "@/components/OutputStatusControls";
+import type { OutputStatus } from "@/lib/types";
 
 export const runtime = "edge";
 export const revalidate = 0;
@@ -78,9 +80,9 @@ export default async function TransmissionPage(props: {
               <article key={o.id} className="border border-line p-5">
                 <div className="flex items-baseline justify-between mb-3">
                   <div className="cinematic">{CHANNEL_LABELS[channel]}</div>
-                  <div className="mono text-xs text-muted">{o.status}</div>
                 </div>
                 <ChannelBody channel={channel} body={o.body} />
+                <OutputStatusControls outputId={o.id} status={o.status as OutputStatus} />
               </article>
             );
           })}
